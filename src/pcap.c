@@ -71,31 +71,34 @@ static void pcap_packet_handler(u_char *v, const struct pcap_pkthdr *h, const u_
   struct ether_addr           *ether_src, *ether_dest;
   struct in_addr              *ip_src, *ip_dest;
   struct libnet_ethernet_hdr  *heth;
-  struct libnet_arp_hdr       *harp;
   struct cb_args              *args = (struct cb_args *)v;
   mrb_value                   r_ret;
   
   heth = (void*) bytes;
-  harp = (void*)((char*)heth + LIBNET_ETH_H);
   
-  ether_src = (struct ether_addr*)harp + LIBNET_ARP_H;
-  ip_src = (struct in_addr *)ether_src + harp->ar_hln;
-  
-  ether_dest = (struct ether_addr*) ip_src + harp->ar_pln;
-  ip_dest = (struct in_addr *)ether_dest + harp->ar_hln;
-  
-  struct RClass *c = mrb_class_get(args->mrb, "ARPPacket");
-  
-  r_ret = mrb_funcall(args->mrb, mrb_obj_value(c), "new", 5,
-      mrb_str_new_cstr(args->mrb, ether_ntoa(ether_src)),
-      mrb_str_new_cstr(args->mrb, ether_ntoa(ether_dest)),
-      mrb_fixnum_value(harp->ar_op),
-      mrb_str_new_cstr(args->mrb, inet_ntoa(*ip_src)),
-      mrb_str_new_cstr(args->mrb, inet_ntoa(*ip_dest))
-    );
-  
-  mrb_funcall(args->mrb, args->cb, "call", 1, r_ret);
-  // yield
+  if( ntohs(heth->ether_type) == ETHERTYPE_ARP){
+    struct libnet_arp_hdr       *harp;
+    
+    harp = (struct libnet_arp_hdr*)(heth + 1);
+    
+    ether_src = (struct ether_addr*)(harp + 1);
+    ip_src = (struct in_addr *)((void*)ether_src + harp->ar_hln);
+    
+    ether_dest = (struct ether_addr*)((void*)ip_src + harp->ar_pln);
+    ip_dest = (struct in_addr *)((void*)ether_dest + harp->ar_hln);
+    
+    struct RClass *c = mrb_class_get(args->mrb, "ARPPacket");
+    
+    r_ret = mrb_funcall(args->mrb, mrb_obj_value(c), "new", 5,
+        mrb_str_new_cstr(args->mrb, ether_ntoa(ether_src)),
+        mrb_str_new_cstr(args->mrb, ether_ntoa(ether_dest)),
+        mrb_fixnum_value( ntohs(harp->ar_op) ),
+        mrb_str_new_cstr(args->mrb, inet_ntoa(*ip_src)),
+        mrb_str_new_cstr(args->mrb, inet_ntoa(*ip_dest))
+      );
+    
+    mrb_funcall(args->mrb, args->cb, "call", 1, r_ret);
+  }
 
   
   // check packet type and source (ignore packet from us)
