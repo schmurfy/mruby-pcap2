@@ -9,10 +9,18 @@
 #include <net/ethernet.h>
 
 #include <pcap.h>
-#include <libnet.h>
 
 #include <mruby.h>
 #include <mruby/data.h>
+
+#ifdef __OpenBSD__
+#include <netinet/if_ether.h>
+#else
+#include <net/ethernet.h>
+#endif
+
+#include <arpa/inet.h>
+#include <net/if_arp.h>
 
 
 struct state {
@@ -70,16 +78,16 @@ static void pcap_packet_handler(u_char *v, const struct pcap_pkthdr *h, const u_
   // uint32_t                    ip;
   struct ether_addr           *ether_src, *ether_dest;
   struct in_addr              *ip_src, *ip_dest;
-  struct libnet_ethernet_hdr  *heth;
+  struct ether_header         *heth;
   struct cb_args              *args = (struct cb_args *)v;
   mrb_value                   r_ret;
   
-  heth = (void*) bytes;
+  heth = (struct ether_header*) bytes;
   
   if( ntohs(heth->ether_type) == ETHERTYPE_ARP){
-    struct libnet_arp_hdr       *harp;
+    struct arphdr       *harp;
     
-    harp = (struct libnet_arp_hdr*)(heth + 1);
+    harp = (struct arphdr*)(heth + 1);
     
     ether_src = (struct ether_addr*)(harp + 1);
     ip_src = (struct in_addr *)((void*)ether_src + harp->ar_hln);
