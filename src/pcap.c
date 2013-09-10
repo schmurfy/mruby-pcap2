@@ -132,7 +132,9 @@ static void pcap_packet_handler(u_char *v, const struct pcap_pkthdr *h, const u_
 
 static mrb_value pcap_stop(mrb_state *mrb, mrb_value self)
 {
-  // pcap_breakloop
+  struct state *st = (struct state *) DATA_PTR(self);
+  
+  pcap_breakloop(st->pcap);
   return mrb_nil_value();
 }
 
