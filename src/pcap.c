@@ -81,6 +81,7 @@ static void pcap_packet_handler(u_char *v, const struct pcap_pkthdr *h, const u_
   struct ether_header         *heth;
   struct cb_args              *args = (struct cb_args *)v;
   mrb_value                   r_ret;
+  int                         ai = mrb_gc_arena_save(args->mrb);
   
   heth = (struct ether_header*) bytes;
   
@@ -127,6 +128,8 @@ static void pcap_packet_handler(u_char *v, const struct pcap_pkthdr *h, const u_
   //     }
   //   }
   // }
+  
+  mrb_gc_arena_restore(args->mrb, ai);
   
 }
 
