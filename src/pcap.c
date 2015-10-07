@@ -173,7 +173,7 @@ ret:
 
 void mrb_mruby_pcap_gem_init(mrb_state *mrb)
 {
-  struct RClass *class = mrb_define_class(mrb, "PcapSniffer", NULL);
+  struct RClass *class = mrb_define_class(mrb, "PcapSniffer", mrb->object_class);
   
   int ai = mrb_gc_arena_save(mrb);
   
