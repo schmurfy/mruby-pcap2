@@ -76,38 +76,41 @@ ret:
 static void pcap_packet_handler(u_char *v, const struct pcap_pkthdr *h, const u_char *bytes)
 {
   // uint32_t                    ip;
-  struct ether_addr           *ether_src, *ether_dest;
-  struct in_addr              *ip_src, *ip_dest;
-  struct ether_header         *heth;
+  // struct ether_addr           *ether_src, *ether_dest;
+  // struct in_addr              *ip_src, *ip_dest;
+  // struct ether_header         *heth;
   struct cb_args              *args = (struct cb_args *)v;
-  mrb_value                   r_ret;
+  // mrb_value                   r_ret;
   int                         ai = mrb_gc_arena_save(args->mrb);
   
-  heth = (struct ether_header*) bytes;
+  // heth = (struct ether_header*) bytes;
   
-  if( ntohs(heth->ether_type) == ETHERTYPE_ARP){
-    struct arphdr       *harp;
-    
-    harp = (struct arphdr*)(heth + 1);
-    
-    ether_src = (struct ether_addr*)(harp + 1);
-    ip_src = (struct in_addr *)((void*)ether_src + harp->ar_hln);
-    
-    ether_dest = (struct ether_addr*)((void*)ip_src + harp->ar_pln);
-    ip_dest = (struct in_addr *)((void*)ether_dest + harp->ar_hln);
-    
-    struct RClass *c = mrb_class_get(args->mrb, "ARPPacket");
-    
-    r_ret = mrb_funcall(args->mrb, mrb_obj_value(c), "new", 5,
-        mrb_str_new_cstr(args->mrb, ether_ntoa(ether_src)),
-        mrb_str_new_cstr(args->mrb, ether_ntoa(ether_dest)),
-        mrb_fixnum_value( ntohs(harp->ar_op) ),
-        mrb_str_new_cstr(args->mrb, inet_ntoa(*ip_src)),
-        mrb_str_new_cstr(args->mrb, inet_ntoa(*ip_dest))
-      );
-    
-    mrb_funcall(args->mrb, args->cb, "call", 1, r_ret);
-  }
+  
+  mrb_funcall(args->mrb, args->cb, "call", 1, mrb_str_new(args->mrb, (const char *)bytes, h->caplen));
+  
+  // if( ntohs(heth->ether_type) == ETHERTYPE_ARP){
+  //   struct arphdr       *harp;
+  //   
+  //   harp = (struct arphdr*)(heth + 1);
+  //   
+  //   ether_src = (struct ether_addr*)(harp + 1);
+  //   ip_src = (struct in_addr *)((void*)ether_src + harp->ar_hln);
+  //   
+  //   ether_dest = (struct ether_addr*)((void*)ip_src + harp->ar_pln);
+  //   ip_dest = (struct in_addr *)((void*)ether_dest + harp->ar_hln);
+  //   
+  //   struct RClass *c = mrb_class_get(args->mrb, "ARPPacket");
+  //   
+  //   r_ret = mrb_funcall(args->mrb, mrb_obj_value(c), "new", 5,
+  //       mrb_str_new_cstr(args->mrb, ether_ntoa(ether_src)),
+  //       mrb_str_new_cstr(args->mrb, ether_ntoa(ether_dest)),
+  //       mrb_fixnum_value( ntohs(harp->ar_op) ),
+  //       mrb_str_new_cstr(args->mrb, inet_ntoa(*ip_src)),
+  //       mrb_str_new_cstr(args->mrb, inet_ntoa(*ip_dest))
+  //     );
+  //   
+  //   mrb_funcall(args->mrb, args->cb, "call", 1, r_ret);
+  // }
 
   
   // check packet type and source (ignore packet from us)
@@ -177,9 +180,9 @@ void mrb_mruby_pcap_gem_init(mrb_state *mrb)
   
   int ai = mrb_gc_arena_save(mrb);
   
-  mrb_define_method(mrb, class, "initialize", pcap_initialize, ARGS_REQ(1));
-  mrb_define_method(mrb, class, "capture", pcap_capture, ARGS_REQ(1));
-  mrb_define_method(mrb, class, "stop", pcap_stop, ARGS_NONE());
+  mrb_define_method(mrb, class, "initialize", pcap_initialize, MRB_ARGS_REQ(1));
+  mrb_define_method(mrb, class, "capture", pcap_capture, MRB_ARGS_REQ(1));
+  mrb_define_method(mrb, class, "stop", pcap_stop, MRB_ARGS_NONE());
       
   mrb_gc_arena_restore(mrb, ai);
 
